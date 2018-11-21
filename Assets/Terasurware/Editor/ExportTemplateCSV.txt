@@ -1,0 +1,49 @@
+﻿using UnityEngine;
+using System.Collections;
+using System.IO;
+using UnityEditor;
+using System.Xml.Serialization;
+
+public class $ExportTemplate$: AssetPostprocessor {
+	private static readonly string filePath = "$IMPORT_PATH$";
+	private static readonly string exportPath = "$EXPORT_PATH$";
+
+	static void OnPostprocessAllAssets(string[]importedAssets, string[]deletedAssets, string[]movedAssets, string[]movedFromAssetPaths) {
+		foreach(string asset in importedAssets) {
+			if (!filePath.Equals(asset))
+				continue;
+
+			using(FileStream stream = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)) {
+				string separateKey = "$SeparateKey$";
+				StreamReader sr = new StreamReader(stream);
+				CSVLoader csvLoader = new CSVLoader();
+				csvLoader.Load(sr.ReadToEnd(), separateKey.ToCharArray()[0]);
+				// check sheet
+				if (csvLoader.Rows == 0) {
+					Debug.LogError("[$ExcelData$] sheet not found");
+					break;
+				}
+
+				// check scriptable object
+				var data = ($ExcelData$)AssetDatabase.LoadAssetAtPath(exportPath, typeof($ExcelData$));
+				if (data == null) {
+					data = ScriptableObject.CreateInstance < $ExcelData$ > ();
+					AssetDatabase.CreateAsset((ScriptableObject)data, exportPath);
+					data.hideFlags = HideFlags.NotEditable;
+				}
+				data.param.Clear();
+				for (int i = 0; i <= csvLoader.Rows; i++) {
+					var p = new $ExcelData$.Param();
+					$EXPORT_DATA$
+
+					data.param.Add(p);
+				}
+
+				// save scriptable object
+				ScriptableObject obj = AssetDatabase.LoadAssetAtPath(exportPath, typeof(ScriptableObject))as ScriptableObject;
+				EditorUtility.SetDirty(obj);
+			}
+
+		}
+	}
+}
